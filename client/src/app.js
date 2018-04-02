@@ -1,5 +1,6 @@
 // @flow
 import * as React from 'react';
+import {Component} from 'react-simplified';
 import ReactDOM from 'react-dom';
 import {HashRouter, Route} from 'react-router-dom';
 import createHashHistory from 'history/createHashHistory';
@@ -8,55 +9,40 @@ import {Article, articleService} from './services';
 import {Alert, NavigationBar, Card, Table, Form} from './widgets';
 import Signal from 'signals';
 
-class Home extends React.Component<{}> {
+class Home extends Component {
   render() {
     return <Card title="Example App">Demonstration of React with Flow and server communication</Card>;
   }
 }
 
-class ArticleDetails extends React.Component<{match: {params: {id: number}}}, {article: ?Article}> {
-  state = {article: null};
+class ArticleDetails extends Component<{match: {params: {id: number}}}> {
+  article: ?Article = null;
 
   render() {
-    if (!this.state.article) return null;
+    if (!this.article) return null;
     return (
-      <Card title={'Article: ' + this.state.article.title}>
+      <Card title={'Article: ' + this.article.title}>
         <div>
           <div>
-            <strong>{this.state.article.abstract}</strong>
+            <strong>{this.article.abstract}</strong>
           </div>
-          <div>{this.state.article.text}</div>
+          <div>{this.article.text}</div>
         </div>
       </Card>
     );
   }
 
-  // Helper function to update component
-  update() {
+  componentDidMount() {
     articleService
       .getArticle(this.props.match.params.id)
-      .then(article => {
-        this.setState({article: article});
-      })
-      .catch((error: Error) => {
-        Alert.danger('Error getting article ' + this.props.match.params.id + ': ' + error.message);
-      });
-  }
-
-  componentDidMount() {
-    this.update();
-  }
-
-  // Called when the this.props-object change while the component is mounted
-  // For instance, when navigating from path /articles/1 to /articles/2
-  componentWillReceiveProps() {
-    setTimeout(() => {
-      this.update();
-    }, 0); // Enqueue this.update() after props has changed
+      .then(article => (this.article = article))
+      .catch((error: Error) =>
+        Alert.danger('Error getting article ' + this.props.match.params.id + ': ' + error.message)
+      );
   }
 }
 
-class NewArticle extends React.Component<{}> {
+class NewArticle extends Component {
   form;
   title;
   abstract;
@@ -74,7 +60,14 @@ class NewArticle extends React.Component<{}> {
             {label: 'Title', input: <input ref={e => (this.title = e)} type="text" required />},
             {label: 'Abstract', input: <textarea ref={e => (this.abstract = e)} rows="2" required />},
             {label: 'Text', input: <textarea ref={e => (this.text = e)} rows="3" required />},
-            {checkInputs: [{label: 'I have read, understand and accept the terms and ...', input: <input type="checkbox" required />}]}
+            {
+              checkInputs: [
+                {
+                  label: 'I have read, understand and accept the terms and ...',
+                  input: <input type="checkbox" required />
+                }
+              ]
+            }
           ]}
         />
       </Card>
@@ -92,15 +85,13 @@ class NewArticle extends React.Component<{}> {
             this.onAdd.dispatch();
             history.push('/articles/' + id);
           })
-          .catch((error: Error) => {
-            Alert.danger('Error adding article: ' + error.message);
-          });
+          .catch((error: Error) => Alert.danger('Error adding article: ' + error.message));
       });
     }
   }
 }
 
-class Articles extends React.Component<{}> {
+class Articles extends Component {
   table;
   newArticle;
 
@@ -121,11 +112,10 @@ class Articles extends React.Component<{}> {
     articleService
       .getArticles()
       .then(articles => {
-        if (this.table) this.table.setRows(articles.map(article => ({id: article.id, cells: [article.title, article.abstract]})));
+        if (this.table)
+          this.table.setRows(articles.map(article => ({id: article.id, cells: [article.title, article.abstract]})));
       })
-      .catch((error: Error) => {
-        Alert.danger('Error getting articles: ' + error.message);
-      });
+      .catch((error: Error) => Alert.danger('Error getting articles: ' + error.message));
   }
 
   componentDidMount() {

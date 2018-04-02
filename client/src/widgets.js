@@ -1,31 +1,24 @@
 // @flow
 import * as React from 'react';
+import {Component} from 'react-simplified';
 import ReactDOM from 'react-dom';
 import {NavLink} from 'react-router-dom';
 import Signal from 'signals';
 
 /**
- * Renders alert messages using Bootstrap classes. Only one instance of this component is supported.
+ * Renders alert messages using Bootstrap classes.
  */
-export class Alert extends React.Component<{}, {alerts: {text: React.Node, type: string}[]}> {
-  state = {alerts: []};
-
-  static _instance: ?Alert;
-
-  constructor() {
-    super();
-    Alert._instance = this;
-  }
+export class Alert extends Component {
+  alerts: {text: React.Node, type: string}[] = [];
 
   render() {
-    return this.state.alerts.map((alert, i) => (
+    return this.alerts.map((alert, i) => (
       <div key={i} className={'alert alert-' + alert.type} role="alert">
         {alert.text}
         <button
           className="close"
           onClick={() => {
-            this.state.alerts.splice(i, 1);
-            this.setState({alerts: this.state.alerts});
+            this.alerts.splice(i, 1);
           }}
         >
           &times;
@@ -34,47 +27,30 @@ export class Alert extends React.Component<{}, {alerts: {text: React.Node, type:
     ));
   }
 
-  componentWillUnmount() {
-    Alert._instance = null;
-  }
-
   static success(text: React.Node) {
-    let instance = Alert._instance;
-    if (instance) {
-      instance.state.alerts.push({text: text, type: 'success'});
-      instance.setState({alerts: instance.state.alerts});
-    }
+    for (let instance: Alert of Alert.instances()) instance.alerts.push({text: text, type: 'success'});
   }
 
   static info(text: React.Node) {
-    let instance = Alert._instance;
-    if (instance) {
-      instance.state.alerts.push({text: text, type: 'info'});
-      instance.setState({alerts: instance.state.alerts});
-    }
+    for (let instance: Alert of Alert.instances()) instance.alerts.push({text: text, type: 'info'});
   }
 
   static warning(text: React.Node) {
-    let instance = Alert._instance;
-    if (instance) {
-      instance.state.alerts.push({text: text, type: 'warning'});
-      instance.setState({alerts: instance.state.alerts});
-    }
+    for (let instance: Alert of Alert.instances()) instance.alerts.push({text: text, type: 'warning'});
   }
 
   static danger(text: React.Node) {
-    let instance = Alert._instance;
-    if (instance) {
-      instance.state.alerts.push({text: text, type: 'danger'});
-      instance.setState({alerts: instance.state.alerts});
-    }
+    for (let instance: Alert of Alert.instances()) instance.alerts.push({text: text, type: 'danger'});
   }
 }
 
 /**
  * Renders a navigation bar using Bootstrap classes
  */
-export class NavigationBar extends React.Component<{brand?: React.Node, links: {to: string, text: React.Node, exact?: boolean}[]}> {
+export class NavigationBar extends Component<{
+  brand?: React.Node,
+  links: {to: string, text: React.Node, exact?: boolean}[]
+}> {
   render() {
     return (
       <nav className="navbar navbar-expand-sm bg-light navbar-light">
@@ -100,7 +76,7 @@ export class NavigationBar extends React.Component<{brand?: React.Node, links: {
 /**
  * Renders an information card using Bootstrap classes
  */
-export class Card extends React.Component<{title: React.Node, children?: React.Node}> {
+export class Card extends Component<{title: React.Node, children?: React.Node}> {
   render() {
     return (
       <div className="card">
@@ -117,12 +93,12 @@ export class Card extends React.Component<{title: React.Node, children?: React.N
  * Renders a table using Bootstrap classes
  */
 type TableRow = {id: number, cells: React.Node[]}; // Helper type
-export class Table extends React.Component<{header?: React.Node[]}, {rows: TableRow[]}> {
-  state = {rows: []};
+export class Table extends Component<{header?: React.Node[]}> {
+  rows: TableRow[] = [];
   onRowClick: Signal<number> = new Signal();
 
   setRows(rows: TableRow[]) {
-    this.setState({rows: rows});
+    this.rows = rows;
   }
 
   render() {
@@ -134,7 +110,7 @@ export class Table extends React.Component<{header?: React.Node[]}, {rows: Table
           </thead>
         ) : null}
         <tbody>
-          {this.state.rows.map(row => (
+          {this.rows.map(row => (
             <tr
               key={row.id}
               onClick={() => {
@@ -153,19 +129,16 @@ export class Table extends React.Component<{header?: React.Node[]}, {rows: Table
 /**
  * Renders a form using Bootstrap classes.
  */
-export class Form extends React.Component<
-  {
-    submitLabel: React.Node,
-    cancelLabel?: React.Node,
-    groups: {
-      label?: React.Node,
-      input?: React.Element<'input' | 'select' | 'textarea'>,
-      checkInputs?: {label?: React.Node, input: React.Element<'input'>}[]
-    }[]
-  },
-  {form_key: number}
-> {
-  state = {form_key: 0};
+export class Form extends Component<{
+  submitLabel: React.Node,
+  cancelLabel?: React.Node,
+  groups: {
+    label?: React.Node,
+    input?: React.Element<'input' | 'select' | 'textarea'>,
+    checkInputs?: {label?: React.Node, input: React.Element<'input'>}[]
+  }[]
+}> {
+  form_key: number = 0;
 
   _form: ?HTMLFormElement;
   submitButton: ?HTMLButtonElement;
@@ -179,7 +152,7 @@ export class Form extends React.Component<
 
   render() {
     return (
-      <form key={this.state.form_key} ref={e => (this._form = e)}>
+      <form key={this.form_key} ref={e => (this._form = e)}>
         {this.props.groups.map((group, i) => {
           let checkInputElements;
           if (group.checkInputs) {
@@ -241,7 +214,7 @@ export class Form extends React.Component<
   }
 
   reset() {
-    this.setState({form_key: ++this.state.form_key}); // Reset this._form
+    ++this.form_key; // Reset this._form
     this.componentDidMount();
   }
 }
